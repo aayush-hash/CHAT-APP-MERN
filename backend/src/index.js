@@ -14,7 +14,7 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
-// Fix __dirname in ES module
+// Fix __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -23,20 +23,22 @@ socketApp.use(express.json());
 socketApp.use(cookieParser());
 socketApp.use(
   cors({
-    origin: "*", // Allow all for now, change to frontend URL in production
+    origin: "*", // allow all for now
     credentials: true,
   })
 );
 
-// API routes
+// API Routes
 socketApp.use("/api/auth", authRoutes);
 socketApp.use("/api/messages", messageRoutes);
 
 // Serve frontend
-const frontendPath = path.join(__dirname, "../../frontend/dist"); // Adjust path
+// IMPORTANT: Make sure frontend is built and path is correct
+const frontendPath = path.join(__dirname, "../../frontend/dist"); 
 socketApp.use(express.static(frontendPath));
 
-socketApp.get("*", (req, res) => {
+// Catch all route using regex instead of '*'
+socketApp.get(/^\/.*$/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
