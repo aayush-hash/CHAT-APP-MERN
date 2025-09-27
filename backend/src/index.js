@@ -1,31 +1,36 @@
+// src/index.js
+import express from "express"; // ✅ Must import express
 import path from "path";
 import { fileURLToPath } from "url";
-import { app, server } from "./lib/socket.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+
+import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
-import { connectDB } from "./lib/db.js";
+import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
-
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.NODE_ENV === "production" ? "*" : "http://localhost:5173",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? "*" // allow all in production
+        : "http://localhost:5173", // frontend dev URL
     credentials: true,
   })
 );
 
-// API routes
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// Serve frontend only in production
+// Serve frontend in production
 if (process.env.NODE_ENV === "production") {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -33,11 +38,12 @@ if (process.env.NODE_ENV === "production") {
   const frontendPath = path.join(__dirname, "../../frontend/dist");
   app.use(express.static(frontendPath));
 
-  // Catch-all route
   app.get("*", (req, res) => {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
+
+const PORT = process.env.PORT || 5000;
 
 // Start server
 server.listen(PORT, () => {
