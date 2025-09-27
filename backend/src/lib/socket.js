@@ -1,4 +1,3 @@
-// src/lib/socket.js
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
@@ -6,23 +5,17 @@ import express from "express";
 const app = express();
 const server = http.createServer(app);
 
+// Store online users
+const userSocketMap = {}; // {userId: socketId}
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"], // your frontend dev URL
-    credentials: true,
+    origin: ["http://localhost:5173"], // Update for production if needed
   },
 });
 
-// Map to store online users
-const userSocketMap = {}; // { userId: socketId }
-
-export function getReceiverSocketId(userId) {
-  return userSocketMap[userId];
-}
-
-// Socket connection
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+  console.log("A user connected", socket.id);
 
   const userId = socket.handshake.query.userId;
   if (userId) userSocketMap[userId] = socket.id;
@@ -30,10 +23,14 @@ io.on("connection", (socket) => {
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
   socket.on("disconnect", () => {
-    console.log("A user disconnected:", socket.id);
-    delete userSocketMap[userId];
+    console.log("A user disconnected", socket.id);
+    if (userId) delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });
 
-export { io, app, server };
+export function getReceiverSocketId(userId) {
+  return userSocketMap[userId];
+}
+
+export { app, server, io };
