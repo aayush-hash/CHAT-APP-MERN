@@ -3,11 +3,13 @@ import http from "http";
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 const server = http.createServer(app);
 
-// Middleware (move express.json, cookieParser, cors here)
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
@@ -15,18 +17,29 @@ app.use(cors({
   credentials: true,
 }));
 
-// Store online users
+// Serve frontend in production
+if (process.env.NODE_ENV === "production") {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const frontendPath = path.join(__dirname, "../../frontend/dist");
+
+  app.use(express.static(frontendPath));
+  app.get(/^(?!\/api).*$/, (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+}
+
+// Online users store
 const userSocketMap = {};
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"], // update in production
+    origin: ["http://localhost:5173"],
   },
 });
 
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
-
   const userId = socket.handshake.query.userId;
   if (userId) userSocketMap[userId] = socket.id;
 
