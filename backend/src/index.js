@@ -19,7 +19,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middlewares
-socketApp.use(express.json());
+socketApp.use(express.json({ limit: "10mb" })); // <-- updated, allows large JSON payloads
+socketApp.use(express.urlencoded({ extended: true, limit: "10mb" })); // <-- allows large form data
 socketApp.use(cookieParser());
 socketApp.use(
   cors({
